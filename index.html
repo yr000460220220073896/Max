@@ -1,0 +1,246 @@
+import random
+import json
+import re
+from datetime import datetime
+import os
+
+class AdvancedChatbot:
+    def __init__(self):
+        # Chatbot personality and greetings
+        self.name = "IndusAI"
+        self.greetings = ["Hello!", "Namaste!", "Hi friend!", "Greetings!", "Hey there!"]
+        self.goodbyes = ["Goodbye!", "See you later!", "Take care!", "Bye bye!", "Have a great day!"]
+        
+        # Conversation memory
+        self.conversation_history = []
+        
+        # Load knowledge base
+        self.load_knowledge_base()
+        
+        # Intent patterns
+        self.intent_patterns = {
+            'greeting': [r'hello', r'hi', r'hey', r'greetings', r'good morning', r'good evening'],
+            'goodbye': [r'bye', r'goodbye', r'see you', r'later', r'quit', r'exit'],
+            'help': [r'help', r'what can you do', r'commands', r'features'],
+            'name': [r'your name', r'who are you', r'introduce yourself'],
+            'time': [r'what time', r'current time', r'time now'],
+            'date': [r'what date', r'current date', r'today is'],
+            'weather': [r'weather', r'temperature', r'climate'],
+            'math': [r'calculate', r'math', r'solve', r'+', r'-', r'\*', r'/'],
+            'programming': [r'code', r'programming', r'python', r'javascript', r'java'],
+            'study': [r'study', r'homework', r'exam', r'notes', r'education'],
+            'fun': [r'joke', r'funny', r'game', r'entertain', r'play']
+        }
+        
+        # Conversation context
+        self.context = {
+            'last_topic': None,
+            'user_name': None,
+            'conversation_count': 0
+        }
+
+    def load_knowledge_base(self):
+        """Load predefined knowledge base"""
+        self.knowledge_base = {
+            'about_me': [
+                "I'm Max, created by Naveen. I'm here to help with coding, studies, and fun conversations!",
+                "I'm powered by the Sarvam 105B model and designed to assist Indian students and learners.",
+                "Feel free to ask me anything - from homework help to programming projects!"
+            ],
+            'features': [
+                "I can help with coding in Python, Java, JavaScript and more.",
+                "I assist with Social Science, Math, and other subjects.",
+                "I can create flashcards, explain concepts, and help with homework.",
+                "I know about Indian history, culture, and current affairs.",
+                "I can entertain you with jokes and interesting facts!"
+            ],
+            'capabilities': {
+                'coding': ["Python", "JavaScript", "Java", "C++", "HTML/CSS", "SQL"],
+                'subjects': ["Social Science", "Math", "Science", "English", "Hindi"],
+                'skills': ["Problem solving", "Code debugging", "Project guidance", "Study help"]
+            }
+        }
+
+    def detect_intent(self, message):
+        """Detect user's intent from message"""
+        message = message.lower().strip()
+        
+        for intent, patterns in self.intent_patterns.items():
+            for pattern in patterns:
+                if re.search(pattern, message):
+                    return intent
+        
+        return 'general'
+
+    def process_math_query(self, message):
+        """Process mathematical queries"""
+        try:
+            # Simple math expression evaluation
+            expression = re.sub(r'[^\d+\-*/().\s]', '', message)
+            if expression:
+                result = eval(expression)
+                return f"The result is: {result}"
+        except:
+            return "I couldn't process that math expression. Try something simpler!"
+
+    def process_weather_query(self):
+        """Simulate weather response"""
+        conditions = ["sunny", "partly cloudy", "rainy", "windy"]
+        temp = random.randint(20, 35)
+        return f"Currently it's {temp}°C and {random.choice(conditions)} in most areas."
+
+    def learn_from_conversation(self, user_message, bot_response):
+        """Learn from the conversation (basic learning)"""
+        # Extract potential name
+        name_match = re.search(r'(my name is|i am|call me)\s+(\w+)', user_message.lower())
+        if name_match:
+            self.context['user_name'] = name_match.group(2).capitalize()
+        
+        # Update conversation count
+        self.context['conversation_count'] += 1
+        
+        # Store in history
+        self.conversation_history.append({
+            'user': user_message,
+            'bot': bot_response,
+            'timestamp': datetime.now().strftime("%H:%M")
+        })
+
+    def generate_response(self, user_message):
+        """Generate intelligent response based on intent"""
+        intent = self.detect_intent(user_message)
+        
+        if intent == 'greeting':
+            response = random.choice(self.greetings)
+            if self.context['user_name']:
+                response += f" {self.context['user_name']}!"
+        
+        elif intent == 'goodbye':
+            response = random.choice(self.goodbyes)
+            response += " It was nice talking to you!"
+        
+        elif intent == 'help':
+            response = "I can help you with:\n"
+            response += "📚 Studies - Social Science, Math, Science subjects\n"
+            response += "💻 Coding - Python, JavaScript, Java, and more\n"
+            response += "🤔 Homework help and explanations\n"
+            response += "🎯 Flashcards and study notes\n"
+            response += "😄 Jokes and fun facts\n"
+            response += "🌍 General knowledge and current affairs"
+        
+        elif intent == 'name':
+            response = random.choice(self.knowledge_base['about_me'])
+        
+        elif intent == 'time':
+            current_time = datetime.now().strftime("%H:%M:%S")
+            response = f"The current time is {current_time}"
+        
+        elif intent == 'date':
+            current_date = datetime.now().strftime("%d %B %Y")
+            response = f"Today is {current_date}"
+        
+        elif intent == 'weather':
+            response = self.process_weather_query()
+        
+        elif intent == 'math':
+            response = self.process_math_query(user_message)
+        
+        elif intent == 'programming':
+            response = "I can help with coding! Try asking:\n"
+            response += "• 'Write a Python program for...' \n"
+            response += "• 'Debug this JavaScript code'\n"
+            response += "• 'Explain this algorithm'\n"
+            response += "• 'Create a simple web app'"
+        
+        elif intent == 'study':
+            response = "I'd love to help with studies! You can ask me:\n"
+            response += "• 'Explain democracy concepts'\n"
+            response += "• 'Help with Math problems'\n"
+            response += "• 'Create flashcards for chapter'\n"
+            response += "• 'Explain difficult topics'"
+        
+        elif intent == 'fun':
+            jokes = [
+                "Why don't scientists trust atoms? Because they make up everything!",
+                "Why did the scarecrow win an award? He was outstanding in his field!",
+                "Why don't eggs tell jokes? They'd crack each other up!",
+                "What do you call a fake noodle? An impasta!"
+            ]
+            response = random.choice(jokes)
+        
+        else:
+            # General response
+            responses = [
+                "That's interesting! Tell me more.",
+                "I understand. Can you explain more?",
+                "Thanks for sharing! What else?",
+                "Ah, got it! Anything specific you'd like to know?",
+                "Cool! Let me help you with that."
+            ]
+            response = random.choice(responses)
+        
+        return response
+
+    def display_conversation_info(self):
+        """Display conversation statistics"""
+        print(f"\n📊 Conversation Stats:")
+        print(f"• Total messages: {len(self.conversation_history)}")
+        print(f"• Your name:Naveen
+        print(f"• AI Assistant: {Max}")
+
+    def chat(self):
+        """Main chat interface"""
+        print(f"\n🤖 {self.name} is ready to chat!")
+        print("Type 'quit' or 'exit' to end the conversation")
+        print("Type 'stats' to see conversation statistics")
+        print("Type 'help' to see available commands")
+        
+        response = random.choice(self.greetings)
+        print(f"\nAI: {response} I'm IndusAI, your AI assistant!")
+        print("You: Hi! What can you do?")
+        
+        while True:
+            try:
+                user_input = input("\nYou: ").strip()
+                
+                if user_input.lower() in ['quit', 'exit', 'bye', 'goodbye']:
+                    goodbye_response = random.choice(self.goodbyes)
+                    print(f"\nAI: {goodbye_response} Have a great day! 👋")
+                    break
+                
+                elif user_input.lower() == 'stats':
+                    self.display_conversation_info()
+                    continue
+                
+                elif user_input.lower() == 'help':
+                    help_response = "Available commands:\n"
+                    help_response += "• 'quit' - End conversation\n"
+                    help_response += "• 'stats' - Show conversation stats\n"
+                    help_response += "• 'help' - Show this help\n"
+                    print(f"\nAI: {help_response}")
+                    continue
+                
+                # Generate and display response
+                bot_response = self.generate_response(user_input)
+                print(f"\nAI: {bot_response}")
+                
+                # Learn from conversation
+                self.learn_from_conversation(user_input, bot_response)
+                
+            except KeyboardInterrupt:
+                print("\n\nAI: Conversation ended. Take care! 👋")
+                break
+            except Exception as e:
+                print(f"\nAI: Oops! Something went wrong: {e}")
+
+# Main execution
+if __name__ == "__main__":
+    print("=" * 60)
+    print("🚀 Welcome to Max Chatbot!")
+    print("=" * 60)
+    print("Enhanced AI Assistant for Indian Students")
+    print("=" * 60)
+    
+    # Create and start chatbot
+    chatbot = AdvancedChatbot()
+    chatbot.chat()
